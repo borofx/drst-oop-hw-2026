@@ -29,9 +29,5 @@ public:
 private:
     unsigned int N;
     Pixel* blocks;
-    struct BlockRect {
-        double x, y, w, h;
-    };
-    BlockRect getBlockRect(int imageIndex) const;
-    int       findTile(double x, double y) const;
+    int findTile(double x, double y) const;
 };
