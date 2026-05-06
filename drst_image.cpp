@@ -44,3 +44,55 @@ int DRSTImage::findTile(double x, double y) const {
     }
     return -1;
 }
+
+Pixel DRSTImage::getPixel(int idx, int x, int y) const {
+    return blocks[idx*N*N + y*N + x];
+}
+
+Pixel DRSTImage::getPixel(double x, double y) const {
+    
+    for (int depth = 0; depth < 8; ++depth) 
+    {
+        int tile = findTile(x, y);
+        if (x<0.0||x>=1.0||y<0.0||y>=1.0) 
+        {
+            break;
+        }
+        if (tile >= 0) 
+        {
+            int ring = tile/12, pos = tile%12;
+            double ts = 1.0 / (4.0 * (1<<ring));
+            double ox = 0.5 - 2.0*ts;
+            double lx = (x - (ox + COL[pos]*ts)) / ts;
+            double ly = (y - (ox + ROW[pos]*ts)) / ts;
+            int px = (int)(lx*N); if (px<0) px=0; if (px>=(int)N) px=N-1;
+            int py = (int)(ly*N); if (py<0) py=0; if (py>=(int)N) py=N-1;
+            return getPixel(tile, px, py);
+        }
+        
+        x = (x-0.5)*16.0 + 0.5;
+        y = (y-0.5)*16.0 + 0.5;
+    }
+    return {0, 0, 0};
+}
+
+void DRSTImage::saveAsPPM(const std::string& filename, size_t size) const {
+    saveAsPPM(filename, size, [](Position p){ return p; });
+}
+
+void DRSTImage::saveAsPPM(const std::string& filename, size_t size, std::function<Position(Position)> phi) const {
+    std::ofstream out(filename, std::ios::binary);
+    if (!out) throw std::runtime_error("cannot open " + filename);
+
+    out << "P6\n" << size << " " << size << "\n255\n";
+    for (size_t row = 0; row < size; ++row)
+    {    
+        for (size_t col = 0; col < size; ++col) 
+        {
+            Position mapped = phi({(col+0.5)/size, (row+0.5)/size});
+            Pixel p = getPixel(mapped.x, mapped.y);
+            char rgb[3] = {(char)p.r, (char)p.g, (char)p.b};
+            out.write(rgb, 3);
+        }
+    }
+}
