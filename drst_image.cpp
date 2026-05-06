@@ -23,3 +23,24 @@ DRSTImage::DRSTImage(std::istream& in) {
         }
     }        
 }
+
+DRSTImage::~DRSTImage() {
+    delete[] blocks;
+}
+
+unsigned int DRSTImage::getSize() const {
+    return 4 * N;
+}
+
+int DRSTImage::findTile(double x, double y) const {
+    for (int i = 0; i < TILES; ++i) 
+    {
+        int ring = i/12, pos = i%12;
+        double ts = 1.0 / (4.0 * (1<<ring));
+        double ox = 0.5 - 2.0*ts;
+        double tx = ox + COL[pos]*ts, ty = ox + ROW[pos]*ts;
+        if (x>=tx && x<tx+ts && y>=ty && y<ty+ts)
+            return i;
+    }
+    return -1;
+}
